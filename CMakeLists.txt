@@ -3,17 +3,18 @@
 
 cmake_minimum_required(VERSION 3.16)
 
-set(PROJECT_VERSION "6.7.5")
+set(PROJECT_VERSION "6.7.80")
 project(ksystemstats VERSION ${PROJECT_VERSION})
 
-set(PROJECT_DEP_VERSION "6.7.0")
-set(QT_MIN_VERSION "6.10.0")
+set(PROJECT_DEP_VERSION "6.6.90")
+set(QT_MIN_VERSION "6.11.0")
 set(KF6_MIN_VERSION "6.30.0")
 set(KDE_COMPILERSETTINGS_LEVEL "5.82")
 
 find_package(ECM ${KF6_MIN_VERSION} REQUIRED NO_MODULE)
 set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH}  ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
+include(CMakeDependentOption)
 include(CheckIncludeFiles)
 include(KDEInstallDirs)
 include(KDECMakeSettings)
@@ -33,7 +34,8 @@ find_package(KF6 ${KF6_MIN_VERSION} REQUIRED COMPONENTS CoreAddons Solid KIO Cra
 find_package(KSysGuard ${PROJECT_DEP_VERSION} REQUIRED)
 
 # there's no NetworkManager on FreeBSD'
-if (LINUX)
+cmake_dependent_option(WITH_NM "Provide improved backend for network statistics" TRUE "LINUX" FALSE)
+if (WITH_NM)
     find_package(KF6NetworkManagerQt ${KF6_MIN_VERSION} CONFIG REQUIRED)
 endif()
 
@@ -45,13 +47,11 @@ ecm_setup_version(PROJECT VARIABLE_PREFIX KSYSTEMSTATS
                   )
 
 ecm_set_disabled_deprecation_versions(QT 5.15.2
-    KF 6.26.0
+    KF 6.27.0
 )
 
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -102,7 +102,6 @@ endif()
 
 # add clang-format target for all our real source files
 file(GLOB_RECURSE ALL_CLANG_FORMAT_SOURCE_FILES *.cpp *.h)
-list(FILTER ALL_CLANG_FORMAT_SOURCE_FILES EXCLUDE REGEX ".*\\.ccls-cache/.*")
 kde_clang_format(${ALL_CLANG_FORMAT_SOURCE_FILES})
 
 ki18n_install(po)
