@@ -126,10 +126,11 @@ OSInfoPrivate::OSInfoPrivate(OSInfoPlugin *qq)
     uptimeProperty = new KSysGuard::SensorProperty(QStringLiteral("uptime"), i18nc("@title", "Uptime"), systemObject);
     uptimeProperty->setUnit(KSysGuard::UnitTime);
 
-    plasmaObject = new KSysGuard::SensorObject(QStringLiteral("plasma"), i18nc("@title", "KDE Plasma"), container);
+    const bool sonicSession = qgetenv("XDG_CURRENT_DESKTOP").split(':').contains(QByteArrayLiteral("SonicDE"));
+    plasmaObject = new KSysGuard::SensorObject(QStringLiteral("plasma"), sonicSession ? i18nc("@title", "SonicDE") : i18nc("@title", "KDE Plasma"), container);
     qtVersionProperty = new KSysGuard::SensorProperty(QStringLiteral("qtVersion"), i18nc("@title", "Qt Version"), plasmaObject);
-    kfVersionProperty = new KSysGuard::SensorProperty(QStringLiteral("kfVersion"), i18nc("@title", "KDE Frameworks Version"), plasmaObject);
-    plasmaVersionProperty = new KSysGuard::SensorProperty(QStringLiteral("plasmaVersion"), i18nc("@title", "KDE Plasma Version"), plasmaObject);
+    kfVersionProperty = new KSysGuard::SensorProperty(QStringLiteral("kfVersion"), sonicSession ? i18nc("@title", "SonicDE Frameworks Version") : i18nc("@title", "KDE Frameworks Version"), plasmaObject);
+    plasmaVersionProperty = new KSysGuard::SensorProperty(QStringLiteral("plasmaVersion"), sonicSession ? i18nc("@title", "SonicDE Version") : i18nc("@title", "KDE Plasma Version"), plasmaObject);
     windowSystemProperty = new KSysGuard::SensorProperty(QStringLiteral("windowsystem"), i18nc("@title", "Window System"), plasmaObject);
 }
 
@@ -137,6 +138,7 @@ OSInfoPlugin::~OSInfoPlugin() = default;
 
 void OSInfoPrivate::init()
 {
+    const bool sonicSession = qgetenv("XDG_CURRENT_DESKTOP").split(':').contains(QByteArrayLiteral("SonicDE"));
     auto kernelName = upperCaseFirst(QSysInfo::kernelType());
     kernelNameProperty->setValue(kernelName);
     kernelVersionProperty->setValue(QSysInfo::kernelVersion());
@@ -164,14 +166,14 @@ void OSInfoPrivate::init()
 
     dbusCall<QVariant>(
         QDBusConnection::sessionBus(),
-        QStringLiteral("org.kde.plasmashell"),
+        sonicSession ? QStringLiteral("org.sonicde.sonicshell") : QStringLiteral("org.kde.plasmashell"),
         QStringLiteral("/MainApplication"),
         QStringLiteral("org.freedesktop.DBus.Properties"),
         QStringLiteral("Get"),
         { QStringLiteral("org.qtproject.Qt.QCoreApplication"), QStringLiteral("applicationVersion") },
         [this](const QDBusPendingReply<QVariant> &reply) {
             if (reply.isError()) {
-                qCWarning(KSYSTEMSTATS_OSINFO) << "Could not determine Plasma version, got: " << reply.error().message();
+                qCWarning(KSYSTEMSTATS_OSINFO) << "Could not determine shell version, got: " << reply.error().message();
                 plasmaVersionProperty->setValue(i18nc("@info", "Unknown"));
             } else {
                 plasmaVersionProperty->setValue(reply.value());
