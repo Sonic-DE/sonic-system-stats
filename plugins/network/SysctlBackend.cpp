@@ -74,13 +74,15 @@ void SysctlNetDevice::update()
 
     ipv4_addrs.clear();
     ipv6_addrs.clear();
-    ifaddrs *ifap;
-    bzero(&ifap, sizeof(ifap));
-    for (getifaddrs(&ifap); ifap != nullptr; ifap = ifap->ifa_next) {
+    ifaddrs *ifap0 = nullptr;
+    if (getifaddrs(&ifap0) != 0) {
+        return;
+    }
+    for (ifaddrs *ifap = ifap0; ifap != nullptr; ifap = ifap->ifa_next) {
         if (name() == QString::fromLatin1(ifap->ifa_name)) {
             sin = reinterpret_cast<struct sockaddr_in *>(ifap->ifa_addr);
             if (sin == NULL)
-                return;
+                continue;
 
             if(getnameinfo(ifap->ifa_addr, sin->sin_len, addr_buf, sizeof(addr_buf), NULL, 0, NI_NUMERICHOST)==0) {
 
@@ -96,7 +98,7 @@ void SysctlNetDevice::update()
     }
     m_ipv4Sensor->setValue(ipv4_addrs.join("\n"));
     m_ipv6Sensor->setValue(ipv6_addrs.join("\n"));
-    freeifaddrs(ifap);
+    freeifaddrs(ifap0);
 }
 
 SysctlNetDevice::~SysctlNetDevice()

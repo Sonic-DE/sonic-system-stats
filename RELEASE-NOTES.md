@@ -2,6 +2,10 @@
 
 The background service that gathers live statistics about your computer, such as CPU, memory and network use, for SonicDE's monitoring tools.
 
+## Unreleased
+
+- On FreeBSD, the network sensors no longer use more memory the longer they run, and keep showing an interface's addresses.
+
 ## 6.8.2 (2026-11-10)
 
 - Now presents itself with SonicDE names and identity throughout the desktop.
